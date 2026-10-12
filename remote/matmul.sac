@@ -1,0 +1,16 @@
+#define I 100
+#define N 500
+
+double[m,p] matmul(double[m,n] a, double[n,p] b) {
+	return {[i,j] -> sum({[k] -> a[i,k] * b[k,j]})};
+}
+
+int main() {
+	x = _genarray_VxS_([N,N],0d);
+	y = _genarray_VxS_([N,N],0d);
+	r = _genarray_VxS_([N,N],0d);
+	for(i = 0;i < I;i++) { 
+		r = matmul(x,y);
+	}
+	return toi(sum(r));
+}

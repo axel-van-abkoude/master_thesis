@@ -1,0 +1,6 @@
+local/env.py
+remote/build/
+remote/sac2c/build_d/
+remote/sac2c/build_p/
+book/_book/
+local/__pycache__/

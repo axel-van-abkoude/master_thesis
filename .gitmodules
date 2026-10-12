@@ -1,0 +1,9 @@
+[submodule "sac2c"]
+	path = remote/sac2c
+	url = git@gitlab.sac-home.org:axelvanabkoude/sac2c.git
+[submodule "stdlib"]
+	path = remote/stdlib
+	url = git@github.com:axel-van-abkoude/stdlib.git
+[submodule "src/cmake-common"]
+	path = remote/cmake-common
+	url = git@github.com:SacBase/cmake-common.git
