@@ -2,5 +2,7 @@ local/env.py
 remote/build/
 remote/sac2c/build_d/
 remote/sac2c/build_p/
+remote/out
+remote/err
 book/_book/
 local/__pycache__/
