@@ -1,16 +1,21 @@
 #define I 100
 #define N 500
 
+inline double sum(double[d:shp] arr) {
+    return with {
+        (_mul_SxV_(0, shp) <= iv < shp) : _sel_VxA_(iv, arr);
+    } : fold(_add_SxS_, 0);
+}
+
 double[m,p] matmul(double[m,n] a, double[n,p] b) {
 	return {[i,j] -> sum({[k] -> a[i,k] * b[k,j]})};
 }
 
 int main() {
-	x = _genarray_VxS_([N,N],0d);
-	y = _genarray_VxS_([N,N],0d);
-	r = _genarray_VxS_([N,N],0d);
+	x = with {} : genarray([N,N],0d);
+	y = with {} : genarray([N,N],0d);
 	for(i = 0;i < I;i++) { 
-		r = matmul(x,y);
+		_hideValue_SxA_(i,matmul(x,y));
 	}
-	return toi(sum(r));
+	return _toi(sum(r));
 }

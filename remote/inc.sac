@@ -1,0 +1,16 @@
+#define I 100
+#define N 500
+
+double[shp] inc(double[shp] a) {
+        return { iv -> _add_SxS_(_sel_VxA_(iv,a),1d) };
+}
+
+int main() {
+        x = with {} : genarray([N],0d);
+
+        for(i = 0; _lt_SxS_(i,I); i = _add_SxS_(i,1)) {
+                _ =_hideValue_SxA_(i,inc(x));
+        }
+
+        return 0;
+}

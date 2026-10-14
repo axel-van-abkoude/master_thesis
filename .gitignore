@@ -1,4 +1,5 @@
-local/env.py
+.env
+tmp/
 remote/build/
 remote/sac2c/build_d/
 remote/sac2c/build_p/
