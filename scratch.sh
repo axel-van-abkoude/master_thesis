@@ -1,14 +1,30 @@
 #!/bin/bash
-# Gen Directory
-name="scratch"
-mkdir -p tmp
-dir=$(mktemp -d "tmp/${name}_XXXXXXXXX")
-exit_code=$?
-if [ $exit_code -ne 0 ]; then echo "Failed to generate directory (code: $exit_code)"; exit 1; fi
-echo "$dir"
+#SBATCH --time=0-01:00:00
+#SBATCH --gres=gpu:1
+#SBATCH --mem=8G
 
-# Compile Experiment
-./build/sac2c_p -profile a -o "$dir/$name" << 'EOF_SAC'
+if [ -z $SLURM_JOB_ID ]
+then target=seq; dir=tmp/local_$(date +%s)
+else target=cuda; dir=tmp/${SLURM_JOB_NAME}_$(date +%s)
+#target=seq
+#target=cuda_alloc
+#target=cuda_core
+#target=cuda_man
+#target=cuda_manp
+#target=cuda_reg
+#target=cudahybrid
+if ! nvidia-smi -L; then exit 1; fi
+fi
+if ! make -f Makefile.local build -j8; then exit 2; fi
+mkdir -p $dir
+bin=$dir/$target
+
+echo "Compiling ... ($bin)"
+if ! ./build/sac2c_p \
+-profile fc \
+-t $target \
+-o $bin \
+<< 'EOF_SAC'
 #define INIT _r = 0;
 #define HIDE(_a) _r = _add_SxS_(_r,_toi_S_(_sel_VxA_(_mul_SxV_(0,_shape_A_((_a))),_hideValue_SxA_(_r,(_a)))));
 #define EXIT return _r;
@@ -28,19 +44,23 @@ noinline double[*] inc(double[*] a)
 
 int main() {
   INIT
-//HIDE(inc(DATA([1000000])))
-//HIDE(inc(DATA([2000000])))
-  HIDE(matmul(DATA([1000,1000]),DATA([1000,1000])))
+  HIDE(inc(DATA([ 1000000])))
+  HIDE(inc(DATA([ 2000000])))
+  HIDE(inc(DATA([ 3000000])))
+  HIDE(inc(DATA([ 4000000])))
+  HIDE(inc(DATA([ 5000000])))
+  HIDE(inc(DATA([ 6000000])))
+  HIDE(inc(DATA([ 7000000])))
+  HIDE(inc(DATA([ 8000000])))
+  HIDE(inc(DATA([ 9000000])))
+  HIDE(inc(DATA([10000000])))
+//HIDE(matmul(DATA([1000000,1000000]),DATA([1000000,1000000])))
+//HIDE(matmul(DATA([2000000,2000000]),DATA([2000000,2000000])))
   EXIT
 }
 EOF_SAC
-exit_code=$?
-if [ $exit_code -ne 0 ]; then echo "Compilation Failed (code: $exit_code)"; exit 1; fi
-echo "Compilation Succes."
+then exit 3; fi
 
-# Run Experiment
-$dir/$name &> $dir/log
-exit_code=$?
-cat $dir/log
-if [ $exit_code -ne 0 ]; then exit 1; fi
+echo "Running ... ($bin)"
+$bin | tee -a $bin.log
 exit 0

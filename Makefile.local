@@ -1,0 +1,11 @@
+## SAC2C BUILD
+
+build: sac2c
+	git submodule update --init --recursive
+	cmake \
+		-DCMAKE_BUILD_TYPE=RELEASE \
+		-B build -S sac2c
+	$(MAKE) -C build
+
+clean:
+	rm -rf build

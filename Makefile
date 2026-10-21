@@ -1,33 +1,67 @@
-# For reliability everything assumes bash as shell
-SHELL := /bin/bash
+# For reliability everything assumes bash as shell. 
+# Provide own path to bash if not located at /bin/bash
+SHELL ?=/bin/bash
+.ONESHELL:
+.PHONY: status login cancel listen check *.sh sync
+include .env
+export
+REMOTE_ADDR :=$(REMOTE_USER)@$(REMOTE_HOST)
 
-default: sync
-
-.PHONY: check sync login clean
-check:
-	rsync -V | head -1
-	ssh -V
-	$(MAKE) login
-
-sync:
-	@source .env && \
-		rsync -avz \
-		--delete \
-		--exclude-from=.gitignore \
-		"$$LOCAL_ROOT/" \
-		"$$REMOTE_USER@$$REMOTE_SERVER:$$REMOTE_ROOT"
-	$(MAKE) login
+status:
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	@squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
+	@sacct --allocations --format=jobname,state,elapsed,exitcode,alloctres%50
+	@END_REMOTE
 
 login:
-	@source .env && \
-		ssh -t "$$REMOTE_USER@$$REMOTE_SERVER" \
-		"cd $$REMOTE_ROOT; squeue -p $$SLURM_PARTITION; sacct; bash -l"
+	@$(MAKE) status
+	@ssh -t "$(REMOTE_ADDR)" "cd $(REMOTE_ROOT) && bash -l"
 
-clean:
-	rm -rf build
-	rm -rf tmp
+cancel:
+	@ssh "$(REMOTE_ADDR)" "scancel --me"
 
-build:
-	cd build && cmake -DCMAKE_BUILD_TYPE=RELEASE ../sac2c
-	$(MAKE) -C build
+listen:
+	@ssh "$(REMOTE_ADDR)" "tail --lines 50 --follow $(REMOTE_ROOT)/log"
 
+check:
+	@rsync -V | head -1
+	@ssh -V
+	@cat .env
+	@$(MAKE) status
+
+*.sh:
+	$(MAKE) sync
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	@cd $(REMOTE_ROOT)
+	sbatch \
+	--partition $(SLURM_PARTITION) \
+	--job-name=$* \
+	--output=log \
+	--parsable \
+	$@
+	@END_REMOTE
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	while squeue -h -n $* -t PENDING | grep -q .; do
+	squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
+	sleep 5
+	done
+	END_REMOTE
+	@$(MAKE) listen
+
+sync:
+	@local=$(LOCAL_ROOT)/
+	@remote=$(REMOTE_ADDR):$(REMOTE_ROOT)
+	@echo "Sending local files to remote ..."
+	@echo "> ($${local} -> $${remote})"
+	@rsync -avz \
+		--delete \
+		--exclude-from=.gitignore \
+		"$${local}" \
+		"$${remote}"
+	@echo "----"
+	@echo "Retreiving remote log file ..."
+	@echo "> ($${remote}/log -> $${local})"
+	@rsync -avz \
+		"$${remote}/log" \
+		"$${local}" \
+		|| echo "No log file found on $${remote}"
