@@ -12,14 +12,20 @@ SLURM_PARTITION=partition_name
 
 ## Building
 See Makefile for options
+
 Check requirements with: ``` make check```
+
 Running a batch job remotely: ``` make scratch.sh```
+
 Building sac2c: ``` make -f Makefile.local build -j8```
 
 ## Layout
 book/ -> Information, Documentation, Analysis
-sac2c/ -> Forked sac2c compiler
-build/ -> Sac2c compiler build
-tmp/ -> build and output files for sac programs
-log -> stdout/stderr of batch jobs
 
+sac2c/ -> Forked sac2c compiler
+
+build/ -> Sac2c compiler build
+
+tmp/ -> build and output files for sac programs
+
+log -> stdout/stderr of batch jobs
