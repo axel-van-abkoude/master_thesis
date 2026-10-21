@@ -1,3 +1,4 @@
 [submodule "sac2c"]
 	path = sac2c
 	url = git@gitlab.sac-home.org:axelvanabkoude/sac2c.git
+	branch = develop
