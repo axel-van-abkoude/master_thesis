@@ -24,8 +24,8 @@ book/ -> Information, Documentation, Analysis
 
 sac2c/ -> Forked sac2c compiler
 
-build/ -> Sac2c compiler build
+bin/ -> Sac2c compiler build
 
-tmp/ -> build and output files for sac programs
+build/ -> build and output files for sac programs
 
 log -> stdout/stderr of batch jobs

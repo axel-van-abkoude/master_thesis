@@ -1,66 +1,137 @@
 #!/bin/bash
 #SBATCH --time=0-01:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --mem=8G
-
-if [ -z $SLURM_JOB_ID ]
-then target=seq; dir=tmp/local_$(date +%s)
-else target=cuda; dir=tmp/${SLURM_JOB_NAME}_$(date +%s)
-#target=seq
-#target=cuda_alloc
-#target=cuda_core
-#target=cuda_man
-#target=cuda_manp
-#target=cuda_reg
-#target=cudahybrid
-if ! nvidia-smi -L; then exit 1; fi
-fi
-if ! make -f Makefile.local build -j8; then exit 2; fi
-mkdir -p $dir
-bin=$dir/$target
-
-echo "Compiling ... ($bin)"
-if ! ./build/sac2c_p \
--profile fc \
--t $target \
--o $bin \
-<< 'EOF_SAC'
-#define INIT _r = 0;
-#define HIDE(_a) _r = _add_SxS_(_r,_toi_S_(_sel_VxA_(_mul_SxV_(0,_shape_A_((_a))),_hideValue_SxA_(_r,(_a)))));
-#define EXIT return _r;
-#define DATA(...) (with {} : genarray(__VA_ARGS__,0d))
-
+#SBATCH --mem=32G
+mkdir -p src
+cat > src/Main.sac << 'EOF_MAIN'
+use Lib:all;
+use Inc:all;
+use Matmul:all;
+use ControlFlow:all;
 use sacprelude_p: {sel};
-inline double +(double l, double r) { return _add_SxS_(l,r); }
-inline double *(double l, double r) { return _mul_SxS_(l,r); }
-inline double sum(double[1:shp] arr)
-{ return with {([0] <= iv < shp) : arr[iv];} : fold(+, 0d); }
-
-noinline double[m,p] matmul(double[m,n] a, double[n,p] b)
-{ return {[i,j] -> sum({[k] -> a[i,k] * b[k,j]})}; }
-
-noinline double[*] inc(double[*] a)
-{ return { iv -> a[iv] + 1d }; }
+#define ZEROS(...) (with {} : genarray(__VA_ARGS__,0d))
 
 int main() {
-  INIT
-  HIDE(inc(DATA([ 1000000])))
-  HIDE(inc(DATA([ 2000000])))
-  HIDE(inc(DATA([ 3000000])))
-  HIDE(inc(DATA([ 4000000])))
-  HIDE(inc(DATA([ 5000000])))
-  HIDE(inc(DATA([ 6000000])))
-  HIDE(inc(DATA([ 7000000])))
-  HIDE(inc(DATA([ 8000000])))
-  HIDE(inc(DATA([ 9000000])))
-  HIDE(inc(DATA([10000000])))
-//HIDE(matmul(DATA([1000000,1000000]),DATA([1000000,1000000])))
-//HIDE(matmul(DATA([2000000,2000000]),DATA([2000000,2000000])))
-  EXIT
+  for(i = 0; i < 10000; i = i + 1) {
+    //_ = inc_nocuda(ZEROS([1000000]));
+    //_ = inc_cuda(ZEROS([1000000]));
+    _ = matmul_nocuda(ZEROS([10000,10000]),ZEROS([10000,10000]));
+    _ = matmul_cuda(ZEROS([10000,10000]),ZEROS([10000,10000]));
+  }
+  return 0;
 }
-EOF_SAC
-then exit 3; fi
+EOF_MAIN
 
-echo "Running ... ($bin)"
-$bin | tee -a $bin.log
+cat > src/control_flow.c << 'EOF_TOUCH'
+void *createControlFlow(void) { return (void*)0; }
+void touch(void *obj) { }
+EOF_TOUCH
+
+cat > src/ControlFlow.sac << 'EOF_CLASS'
+#pragma safe
+class ControlFlow;
+external classtype;
+export all;
+objdef ControlFlow TheControlFlow = createControlFlow();
+external ControlFlow createControlFlow();
+    #pragma linkobj "control_flow.o"
+    #pragma linksign [1]
+
+external void touch(ControlFlow& obj);
+    #pragma linkobj "control_flow.o"
+
+inline void touch() { touch(TheControlFlow); }
+EOF_CLASS
+
+cat > src/Inc.sac << 'EOF_INC'
+module Inc;
+use sacprelude_p: {sel};
+use Lib:all;
+use ControlFlow: {touch};
+export all;
+
+noinline double[*] inc_cuda(double[*] a) {
+  touch();
+  return with {
+    (. <= iv <= .) : a[iv] + 1d;
+  } : modarray(a);
+}
+
+noinline double[*] inc_nocuda(double[*] a) {
+  touch();
+  return with {
+    #pragma nocuda
+    (. <= iv < .) : a[iv] + 1d;
+  } : modarray(a);
+}
+EOF_INC
+
+cat > src/Matmul.sac << 'EOF_MATMUL'
+module Matmul;
+use sacprelude_p: {sel};
+use Lib:all;
+use ControlFlow: {touch};
+export all;
+
+noinline double[m,p] matmul_cuda(double[m,n] a, double[n,p] b) {
+  touch();
+  return with {
+    (. <= [i,j] <= .) : sum({[k] -> a[i,k] * b[k,j]});
+  } : genarray([m,p],0d);
+}
+
+noinline double[m,p] matmul_nocuda(double[m,n] a, double[n,p] b) {
+  touch();
+  return with {
+    #pragma nocuda
+    (. <= [i,j] <= .) : sum({[k] -> a[i,k] * b[k,j]});
+  } : genarray([m,p],0d);
+}
+EOF_MATMUL
+
+cat > src/Lib.sac << 'EOF_LIB'
+module Lib;
+use sacprelude_p: {sel};
+export all;
+inline double +(double l, double r) { return _add_SxS_(l,r); }
+inline double *(double l, double r) { return _mul_SxS_(l,r); }
+inline int +(int l, int r) { return _add_SxS_(l,r); }
+inline bool <(int l, int r) { return _lt_SxS_(l,r); }
+inline double sum(double[1:shp] arr) { return with {([0] <= iv < shp) : arr[iv];} : fold(+, 0d); }
+EOF_LIB
+
+if [ ! -z $SLURM_JOB_ID ]
+then echo "Running under SLURM"
+  if ! nvidia-smi -L; then exit 1; fi
+  target=cuda
+else echo "Running locally"
+  target=seq
+fi
+
+echo "Building sac2c to bin"
+if ! make -f Makefile.local bin -j8; then exit 2; fi
+
+echo "Compiling src to build"
+mkdir -p build
+gcc -c -o build/control_flow.o src/control_flow.c
+./bin/sac2c_p -t $target -o build src/ControlFlow.sac
+./bin/sac2c_p -t $target -o build src/Lib.sac
+./bin/sac2c_p -t $target -o build src/Inc.sac
+./bin/sac2c_p -t $target -o build src/Matmul.sac
+cp src/Main.sac build/Main.sac
+cd build
+../bin/sac2c_p \
+-t $target \
+-o $target \
+-profile fc \
+Main.sac
+
+echo "Running ... ($target)"
+./$target
+#if [ ! -z $SLURM_JOB_ID ]
+#then ./$target | tee -a $target.log
+#else gdb -ex "b SACf__MAIN__main" -ex "r" ./$target
+#fi
+
 exit 0
+

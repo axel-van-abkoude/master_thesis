@@ -1,11 +1,22 @@
-## SAC2C BUILD
+THIS_FILE := $(realpath $(firstword $(MAKEFILE_LIST)))
+TARGETS ?= "seq_checks" ## Targets used by build file
+# TARGETS ?= "cuda" ## Targets used by build file
 
-build: sac2c
+options:
+	@echo "Options for: $(THIS_FILE)"
+	@grep -E '^[A-Z_]+[[:space:]]*\?=.*##|^[a-zA-Z0-9_-]+:.*##' $(THIS_FILE)
+
+bin: ## Building sac2c
 	git submodule update --init --recursive
 	cmake \
 		-DCMAKE_BUILD_TYPE=RELEASE \
-		-B build -S sac2c
-	$(MAKE) -C build
+		-B bin -S sac2c
+	$(MAKE) -C bin
 
-clean:
-	rm -rf build
+# Development
+.PHONY: clean-bin clean-build options
+clean-bin:
+	ls -la bin; rm -rI bin
+clean-build:
+	ls -la build; rm -rI build
+	
