@@ -1,6 +1,11 @@
 THIS_FILE := $(realpath $(firstword $(MAKEFILE_LIST)))
-TARGETS ?= "seq_checks" ## Targets used by build file
-# TARGETS ?= "cuda" ## Targets used by build file
+R := $(dir $(THIS_FILE))
+B := $Rbuild/
+L := $Rlib/
+SAC := $Rbin/sac2c_p
+.PHONY: build clean-bin clean-build options
+
+TARGET ?= seq ## Target used by build file
 
 options:
 	@echo "Options for: $(THIS_FILE)"
@@ -10,13 +15,20 @@ bin: ## Building sac2c
 	git submodule update --init --recursive
 	cmake \
 		-DCMAKE_BUILD_TYPE=RELEASE \
-		-B bin -S sac2c
-	$(MAKE) -C bin
+		-B $Rbin -S $Rsac2c
+	$(MAKE) -C $Rbin
 
-# Development
-.PHONY: clean-bin clean-build options
-clean-bin:
-	ls -la bin; rm -rI bin
-clean-build:
-	ls -la build; rm -rI build
+clean-bin: ## Cleans up bin folder
+	ls -la $Rbin; rm -rI bin
+
+build: ## Building lib for one target specified in TARGET
+	mkdir -p $Bsrc
+	$(CC) -c -o $Bsrc/control_flow.o $Lsrc/control_flow.c
+	$(SAC) -t $(TARGET) -o $B $LControlFlow.sac
+	$(SAC) -t $(TARGET) -o $B $LUtil.sac
+	$(SAC) -t $(TARGET) -o $B $LInc.sac
+	$(SAC) -t $(TARGET) -o $B $LMatmul.sac
+
+clean-build: ## Cleans up build folder
+	ls -la $Rbuild; rm -rI build
 	

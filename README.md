@@ -3,7 +3,6 @@ Looking into the tradeoffs of switching the CUDA memory model at runtime
 
 ## ENV
 ```
-LOCAL_ROOT=/path/to/this/folder
 REMOTE_ROOT=/path/to/folder/on/the/remote
 REMOTE_USER=remote_username
 REMOTE_HOST=remote.hostname.org
@@ -15,9 +14,9 @@ See Makefile for options
 
 Check requirements with: ``` make check```
 
-Running a batch job remotely: ``` make scratch.sh```
+Remote options: ``` make```
 
-Building sac2c: ``` make -f Makefile.local build -j8```
+Local options: ``` make -f Makefile.local```
 
 ## Layout
 book/ -> Information, Documentation, Analysis

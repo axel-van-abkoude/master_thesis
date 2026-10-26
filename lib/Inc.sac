@@ -1,0 +1,19 @@
+module Inc;
+use Util:all;
+use ControlFlow: {touch};
+export all;
+
+noinline double[*] inc_cuda(double[*] a) {
+  touch();
+  return with {
+    (. <= iv <= .) : a[iv] + 1d;
+  } : modarray(a);
+}
+
+noinline double[*] inc_nocuda(double[*] a) {
+  touch();
+  return with {
+    #pragma nocuda
+    (. <= iv < .) : a[iv] + 1d;
+  } : modarray(a);
+}

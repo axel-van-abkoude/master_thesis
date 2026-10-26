@@ -1,0 +1,9 @@
+module Util;
+export all;
+inline double[*] sel(int[.] shp, double[*] arr) { return sacprelude_p::sel(shp,arr); }
+inline int[*] sel(int[.] shp, int[*] arr) { return sacprelude_p::sel(shp,arr); }
+inline double +(double l, double r) { return _add_SxS_(l,r); }
+inline double *(double l, double r) { return _mul_SxS_(l,r); }
+inline int +(int l, int r) { return _add_SxS_(l,r); }
+inline bool <(int l, int r) { return _lt_SxS_(l,r); }
+inline double sum(double[1:shp] arr) { return with {([0] <= iv < shp) : arr[iv];} : fold(+, 0d); }
