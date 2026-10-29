@@ -5,14 +5,15 @@
 if [ ! -z $SLURM_JOB_ID ]
 then echo "Running under SLURM"
   if ! nvidia-smi -L; then exit 1; fi
-  target=cuda
+  target=cuda_mt
   e="000"
 else echo "Running locally"
-  target=seq_checks
+  target=seq
   e="0"
 fi
 
-TARGET=$target make -f Makefile.local build
+make sac2c
+TARGET=$target make lib
 cd build
 
 cat > Scratch.sac << EOF_MAIN

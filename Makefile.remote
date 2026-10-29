@@ -1,9 +1,9 @@
-USES_REMOTE := *.sh refresh status login cancel listen sync
+USES_REMOTE := $(wildcard *.sh) refresh status login cancel listen sync
 ifneq ($(filter $(USES_REMOTE),$(MAKECMDGOALS)),)
 include .env
 export
-.ONESHELL:
 .PHONY: $(USES_REMOTE)
+.ONESHELL:
 REMOTE_ADDR := $(REMOTE_USER)@$(REMOTE_HOST)
 endif
 
@@ -22,7 +22,7 @@ endif
 
 refresh: ## Refreshes the queue and listens after
 	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
-	while squeue -h -n $* -t PENDING | grep -q .
+	while squeue --me | grep -q .
 	do
 	squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
 	sleep 5
