@@ -1,0 +1,21 @@
+# Compute Device Adaptation
+
+## E1
+Runtime Adaptation where we vary the use of the mt and cuda backed.
+
+```{c}
+if (c) {
+  _ = with { #pragma cuda ... } : ... ;
+} else {
+  _ = with { #pragma nocuda ... } : ... ;
+}
+```
+
+where c could be:
+- prev_time_cuda < prev_time_nocuda
+- prev_time_h2d + prev_time_d2h < prev_time_kernel
+...
+
+## E2
+Investigate combinations of withloops
+

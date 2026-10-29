@@ -1,0 +1,4 @@
+# CUDA Memory Model Adaptation
+Dynamic Runtime Adaptation where we choose between the sync async and managed CUDA memory models.
+
+TODO ...

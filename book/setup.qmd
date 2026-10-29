@@ -1,0 +1,17 @@
+# Setup
+
+## Project Structure
+| directory | explanation|
+|-|-|
+| book | Project information and documentation |
+| bin | build folder for sac2c|
+| build | build files for sac executables and library |
+| lib | library used in thesis |
+| sac2c | sac2c compiler |
+| *.sh | batch files to be ran with make *.sh |
+
+## Hardware
+
+## Software
+
+

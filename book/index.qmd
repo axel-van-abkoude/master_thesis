@@ -1,0 +1,8 @@
+# Introduction
+
+## Outline
+- We add cuda_mt target to sac2c
+- We check which subphases need to be included/excluded
+- We measure cuda vs cuda_mt for programs
+- We collect metrics from -profile
+

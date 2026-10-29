@@ -1,0 +1,19 @@
+# Choices
+
+## Pragmas vs External controller
+
+| | pragmas | external controller |
+|-|-|-|
+| usage | logic in SaC | logic in script elsewhere |
+| cost | computation in SaC | communication over socket |
+
+
+Current plan to implement pragma and later extend it with a harness for an external controller
+
+## git vs rsync
+rsync is easier for rapid prototyping
+con is that the sac2c compiler uses git in its compilation process
+
+## Bash and Slurm
+Heredocs provide us with easy to show options given to the file.
+

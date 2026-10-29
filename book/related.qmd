@@ -1,0 +1,24 @@
+# Related Work
+
+## Building Blocks
+
+### Host-GPU Memory Management
+@DBLP:conf/ifl/ViessmannS20
+
+Explanation of three CUDA memory models and sensible codegen for SaC.
+
+### Dynamic Adaptation at Runtime
+@DBLP:conf/ifl/GordonS15
+
+Using an external controller to give instructions to withloops
+- UDS at '/tmp/letterbox'
+
+## Similar Work
+
+## Interesting
+
+## To Read
+@DBLP:conf/eurosys/ParkSSKHL26
+
+@DBLP:conf/sfp/AalderingGS25
+

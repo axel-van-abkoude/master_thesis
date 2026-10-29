@@ -1,0 +1,28 @@
+project:
+  type: book
+
+book:
+  title: "CUDA / MT Runtime Adaptation"
+  author: "Axel van Abkoude"
+  date: "2026-10-29"
+  chapters:
+    - index.qmd
+    - related.qmd
+    - choices.qmd
+    - setup.qmd
+    - E1_compute_device.qmd
+    - E2_memory_model.qmd
+    - results.qmd
+    - conclusion.qmd
+    - bib.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+  pdf:
+    documentclass: scrreprt
+
