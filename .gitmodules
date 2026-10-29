@@ -2,3 +2,7 @@
 	path = sac2c
 	url = git@gitlab.sac-home.org:axelvanabkoude/sac2c.git
 	branch = develop
+[submodule "lib"]
+	path = lib
+	url = git@github.com:axel-van-abkoude/metrics-lib.git
+	branch = main

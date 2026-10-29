@@ -1,0 +1,55 @@
+USES_REMOTE := *.sh refresh status login cancel listen sync
+ifneq ($(filter $(USES_REMOTE),$(MAKECMDGOALS)),)
+include .env
+export
+.ONESHELL:
+.PHONY: $(USES_REMOTE)
+REMOTE_ADDR := $(REMOTE_USER)@$(REMOTE_HOST)
+endif
+
+*.sh: ## Run Batch scripts Remotely
+	@$(MAKE) sync
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	@cd $(REMOTE_ROOT)
+	sbatch \
+	--partition $(SLURM_PARTITION) \
+	--job-name=$* \
+	--output=log \
+	--parsable \
+	$@
+	@END_REMOTE
+	@$(MAKE) refresh
+
+refresh: ## Refreshes the queue and listens after
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	while squeue -h -n $* -t PENDING | grep -q .
+	do
+	squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
+	sleep 5
+	done
+	@END_REMOTE
+	@$(MAKE) listen
+
+status: ## Queue and Accounting on Remote
+	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
+	@squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
+	@sacct --allocations --format=jobname,state,elapsed,exitcode,alloctres%50
+	@END_REMOTE
+
+login: ## Login on remote via SSH
+	@$(MAKE) status
+	@ssh -t "$(REMOTE_ADDR)" "cd $(REMOTE_ROOT) && bash -l"
+
+cancel: ## Cancel all jobs
+	@ssh "$(REMOTE_ADDR)" "scancel --me"
+
+listen: ## Listen on the remote log file
+	src=$(REMOTE_ADDR):$(REMOTE_ROOT)/log
+	dst=$(LOCAL_ROOT)/
+	@trap 'rsync -avz "$${src}" "$${dst}"' INT
+	@ssh "$(REMOTE_ADDR)" "tail --lines 27 --follow $(REMOTE_ROOT)/log"
+
+sync: ## Send local non git ignored files and get remote log and build files
+	src=$(LOCAL_ROOT)/
+	dst=$(REMOTE_ADDR):$(REMOTE_ROOT)
+	@rsync -avz --delete --exclude-from=.gitignore "$${src}" "$${dst}"

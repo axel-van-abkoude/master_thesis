@@ -1,34 +1,26 @@
-THIS_FILE := $(realpath $(firstword $(MAKEFILE_LIST)))
-R := $(dir $(THIS_FILE))
-B := $Rbuild/
-L := $Rlib/
-SAC := $Rbin/sac2c_p
-.PHONY: build clean-bin clean-build options
+.PHONY: sac2c lib stdlib clean-bin clean-build
+TARGETS ?= $(TARGET)
 
-TARGET ?= seq ## Target used by build file
+BUILD_DIR ?= $(LOCAL_ROOT)/build/
+BIN_DIR ?= $(LOCAL_ROOT)/bin/
+SAC2C_EXEC ?= $(BIN_DIR)/sac2c_p
 
-options:
-	@echo "Options for: $(THIS_FILE)"
-	@grep -E '^[A-Z_]+[[:space:]]*\?=.*##|^[a-zA-Z0-9_-]+:.*##' $(THIS_FILE)
-
-bin: ## Building sac2c
+sac2c: ## Building sac2c
 	git submodule update --init --recursive
 	cmake \
 		-DCMAKE_BUILD_TYPE=RELEASE \
-		-B $Rbin -S $Rsac2c
-	$(MAKE) -C $Rbin
+		-B $(BIN_DIR) -S sac2c
+	$(MAKE) -C $(BIN_DIR)
 
-clean-bin: ## Cleans up bin folder
-	ls -la $Rbin; rm -rI bin
+lib: ## Building lib
+	#git submodule update --init --recursive
+	TARGETS=$(TARGETS) \
+	BUILD_DIR=$(BUILD_DIR) \
+	SAC2C_EXEC=$(SAC2C_EXEC) \
+  $(MAKE) -C lib build
 
-build: ## Building lib for one target specified in TARGET
-	mkdir -p $Bsrc
-	$(CC) -c -o $Bsrc/control_flow.o $Lsrc/control_flow.c
-	$(SAC) -t $(TARGET) -o $B $LControlFlow.sac
-	$(SAC) -t $(TARGET) -o $B $LUtil.sac
-	$(SAC) -t $(TARGET) -o $B $LInc.sac
-	$(SAC) -t $(TARGET) -o $B $LMatmul.sac
+clean-build:
+	rm -rf $(BUILD_DIR)
+clean-bin:
+	rm -rf $(BIN_DIR)
 
-clean-build: ## Cleans up build folder
-	ls -la $Rbuild; rm -rI build
-	
