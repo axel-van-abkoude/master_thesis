@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --time=0-01:00:00
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-target=cuda_mt
-make sac2c -j8
-TARGET=$target make lib -j8
+#SBATCH --mem=16G
+
+if ! make rebuild-sac2c -j8; then exit 1; fi
+
 cd build
-../bin/sac2c_p -b20 -t$target -noprelude << 'EOF'
+../bin/sac2c_d -b20 -t$target -noprelude << 'EOF'
 use ControlFlow: all;
 noinline int[1000000] iota_cuda() { touch();
   return with {

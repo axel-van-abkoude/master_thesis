@@ -1,25 +1,37 @@
-.PHONY: sac2c lib clean-bin clean-build
-TARGETS ?= $(TARGET)
+.PHONY: build-all build-sac2c build-lib \
+  rebuild-all rebuild-sac2c rebuild-lib \
+  clean-all clean-bin clean-build
 
-BUILD_DIR ?= $(LOCAL_ROOT)/build/
-BIN_DIR ?= $(LOCAL_ROOT)/bin/
-SAC2C_EXEC ?= $(BIN_DIR)/sac2c_p
+TARGETS ?=cuda_mt
 
-sac2c: ## Building sac2c
-	git submodule update --init --recursive
+BUILD_DIR ?=$(LOCAL_ROOT)/build
+BIN_DIR ?=$(LOCAL_ROOT)/bin
+SAC2C_EXEC ?=$(BIN_DIR)/sac2c_d
+
+build-all: ## Build all
+	$(MAKE) build-sac2c && $(MAKE) build-lib
+
+build-sac2c: ## Build sac2c
 	cmake \
-		-DCMAKE_BUILD_TYPE=RELEASE \
+		-DCMAKE_BUILD_TYPE=DEBUG \
 		-B $(BIN_DIR) -S sac2c
 	$(MAKE) -C $(BIN_DIR)
 
-lib: ## Building lib
-	#git submodule update --init --recursive
+build-lib: ## Build lib
 	TARGETS=$(TARGETS) \
 	BUILD_DIR=$(BUILD_DIR) \
 	SAC2C_EXEC=$(SAC2C_EXEC) \
-  $(MAKE) -C lib build
+	$(MAKE) -C lib build
 
+rebuild-all: ## Rebuild all
+	$(MAKE) clean-all && $(MAKE) build-all
+rebuild-sac2c: ## Rebuild sac2c
+	$(MAKE) clean-bin && $(MAKE) build-sac2c
+rebuild-lib: ## Rebuild lib
+	$(MAKE) clean-build && $(MAKE) build-lib
 
+clean-all:
+	$(MAKE) clean-bin && $(MAKE) clean-build
 clean-build:
 	rm -rf $(BUILD_DIR)
 clean-bin:

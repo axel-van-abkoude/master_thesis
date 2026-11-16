@@ -1,10 +1,10 @@
-USES_REMOTE := $(wildcard *.sh) refresh status login cancel listen sync
+USES_REMOTE := $(wildcard *.sh) refresh status log login cancel listen sync
 ifneq ($(filter $(USES_REMOTE),$(MAKECMDGOALS)),)
 include .env
 export
 .PHONY: $(USES_REMOTE)
 .ONESHELL:
-REMOTE_ADDR := $(REMOTE_USER)@$(REMOTE_HOST)
+REMOTE_ADDR :=$(REMOTE_USER)@$(REMOTE_HOST)
 endif
 
 *.sh: ## Run Batch scripts Remotely
@@ -22,11 +22,10 @@ endif
 
 refresh: ## Refreshes the queue and listens after
 	@ssh "$(REMOTE_ADDR)" "bash -s" << 'END_REMOTE'
-	while squeue --me | grep -q .
-	do
-	squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
-	sleep 5
-	done
+	@while squeue -h --me -t PENDING | grep -q .; do
+	@squeue --partition=$(SLURM_PARTITION) --format="%.10j %.10T %.10M %.10u %.16S %.8v %R"
+	@sleep 5
+	@done
 	@END_REMOTE
 	@$(MAKE) listen
 
@@ -46,10 +45,15 @@ cancel: ## Cancel all jobs
 listen: ## Listen on the remote log file
 	src=$(REMOTE_ADDR):$(REMOTE_ROOT)/log
 	dst=$(LOCAL_ROOT)/
-	@trap 'rsync -avz "$${src}" "$${dst}"' INT
+	@trap '$(MAKE) log' INT
 	@ssh "$(REMOTE_ADDR)" "tail --lines 27 --follow $(REMOTE_ROOT)/log"
 
-sync: ## Send local non git ignored files and get remote log and build files
+log: ## Get log file
+	src=$(REMOTE_ADDR):$(REMOTE_ROOT)/log
+	dst=$(LOCAL_ROOT)/
+	rsync -avz "$${src}" "$${dst}"
+
+sync: ## Send local non git ignored files and
 	src=$(LOCAL_ROOT)/
 	dst=$(REMOTE_ADDR):$(REMOTE_ROOT)
 	@rsync -avz --delete --exclude-from=.gitignore "$${src}" "$${dst}"
